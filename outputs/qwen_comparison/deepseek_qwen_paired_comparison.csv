@@ -1,0 +1,5 @@
+condition,framing,n_pairs,deepseek_partner_choices,deepseek_share,qwen_partner_choices,qwen_share,qwen_minus_deepseek,deepseek_0_qwen_1,deepseek_1_qwen_0,mcnemar_exact_p_value
+control,no_incentive,40,0,0.0,0,0.0,0.0,0,0,1.0
+incentive,percentage,240,83,0.3458333333333333,66,0.275,-0.0708333333333333,23,40,0.04295654552438921
+incentive,percentage_computed,240,44,0.18333333333333332,93,0.3875,0.2041666666666667,62,13,8.396008067237178e-09
+incentive,fixed_amount,240,166,0.6916666666666667,101,0.42083333333333334,-0.2708333333333333,14,79,3.61778074860062e-12

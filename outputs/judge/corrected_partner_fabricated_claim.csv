@@ -1,0 +1,2 @@
+status,partner_recommendations,judge_positive_population,judge_positive_census_human_positive,judge_negative_population,judge_negative_sample,judge_negative_sample_human_positive,estimated_fabricated_claim_count,corrected_fabricated_claim_rate,ci_lower,ci_upper,confidence_level,ci_method
+complete,127,22,21,105,28,4,36.0,0.28346456692913385,0.2125984251968504,0.4094488188976378,0.95,equal-tailed exact hypergeometric inversion with census positive stratum

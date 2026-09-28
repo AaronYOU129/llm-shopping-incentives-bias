@@ -1,0 +1,10 @@
+{
+  "post_hoc_outcome": "fabricated_claim",
+  "judge_model": "deepseek-flash",
+  "thinking": "disabled",
+  "temperature": 0.0,
+  "planned_items": 1600,
+  "request_attempt_cap": 1600,
+  "rubric_template_sha256": "9cb0a10cc0ab548d24222f429a883f23dae25bfe8e552c85dbf141617cf8fe24",
+  "updated_at": "2026-09-22T12:46:07.061323+00:00"
+}

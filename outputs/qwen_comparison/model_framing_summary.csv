@@ -1,0 +1,9 @@
+model,condition,framing,n,partner_choices,share,ci_lower,ci_upper
+deepseek-flash/non-thinking,control,no_incentive,40,0,0.0,0.0,0.08762160119728664
+deepseek-flash/non-thinking,incentive,percentage,240,83,0.3458333333333333,0.2885130073734605,0.40801111794185346
+deepseek-flash/non-thinking,incentive,percentage_computed,240,44,0.18333333333333332,0.1394999542285449,0.23714419506777568
+deepseek-flash/non-thinking,incentive,fixed_amount,240,166,0.6916666666666667,0.6306052871856103,0.7466890435034588
+qwen3.7-plus/non-thinking,control,no_incentive,40,0,0.0,0.0,0.08762160119728664
+qwen3.7-plus/non-thinking,incentive,percentage,240,66,0.275,0.2223885797371556,0.3347006842365459
+qwen3.7-plus/non-thinking,incentive,percentage_computed,240,93,0.3875,0.32809850182339095,0.4504461301634598
+qwen3.7-plus/non-thinking,incentive,fixed_amount,240,101,0.42083333333333334,0.3601022970721577,0.4840587402519224

@@ -1,0 +1,2 @@
+status,judge_negative_nonpartner_population,sample_size,human_positive_false_negatives,observed_false_negative_rate,estimated_fabricated_claim_count,ci_lower,ci_upper,confidence_level,ci_method
+complete,1473,20,0,0.0,0.0,0.0,0.1670061099796334,0.95,equal-tailed exact hypergeometric inversion

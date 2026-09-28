@@ -1,0 +1,37 @@
+model,nudge,incentive_rate,framing_1,framing_2,n_1,partner_choices_1,share_1,n_2,partner_choices_2,share_2,difference_1_minus_2,test,statistic,p_value,p_value_holm
+deepseek-flash/non-thinking,0,10,percentage,percentage_computed,40,5,0.125,40,0,0.0,0.125,two-sided two-proportion z-test,2.3094010767585034,0.020921335337794018,0.4811907127692624
+deepseek-flash/non-thinking,0,10,percentage_computed,fixed_amount,40,0,0.0,40,15,0.375,-0.375,two-sided two-proportion z-test,-4.296689244236597,1.733679663961263e-05,0.0005201038991883789
+deepseek-flash/non-thinking,0,10,percentage,fixed_amount,40,5,0.125,40,15,0.375,-0.25,two-sided two-proportion z-test,-2.581988897471611,0.009823274507519247,0.24558186268798118
+deepseek-flash/non-thinking,0,20,percentage,percentage_computed,40,2,0.05,40,0,0.0,0.05,two-sided two-proportion z-test,1.432229748078866,0.15207808079297508,1.0
+deepseek-flash/non-thinking,0,20,percentage_computed,fixed_amount,40,0,0.0,40,25,0.625,-0.625,two-sided two-proportion z-test,-6.030226891555272,1.6372964502968489e-09,5.730537576038971e-08
+deepseek-flash/non-thinking,0,20,percentage,fixed_amount,40,2,0.05,40,25,0.625,-0.575,two-sided two-proportion z-test,-5.438172916344633,5.382971965312543e-08,1.8302104682062647e-06
+deepseek-flash/non-thinking,0,30,percentage,percentage_computed,40,6,0.15,40,3,0.075,0.075,two-sided two-proportion z-test,1.0614897848685505,0.28846737281474955,1.0
+deepseek-flash/non-thinking,0,30,percentage_computed,fixed_amount,40,3,0.075,40,21,0.525,-0.45,two-sided two-proportion z-test,-4.391550328268399,1.1254527653842153e-05,0.0003601448849229489
+deepseek-flash/non-thinking,0,30,percentage,fixed_amount,40,6,0.15,40,21,0.525,-0.375,two-sided two-proportion z-test,-3.546634510659543,0.00039018549690516375,0.010925193913344585
+deepseek-flash/non-thinking,1,10,percentage,percentage_computed,40,25,0.625,40,14,0.35,0.275,two-sided two-proportion z-test,2.4604437841087172,0.013876530936153717,0.3330367424676892
+deepseek-flash/non-thinking,1,10,percentage_computed,fixed_amount,40,14,0.35,40,30,0.75,-0.4,two-sided two-proportion z-test,-3.5957325998039575,0.00032347994672584615,0.009380918455049538
+deepseek-flash/non-thinking,1,10,percentage,fixed_amount,40,25,0.625,40,30,0.75,-0.125,two-sided two-proportion z-test,-1.2060453783110545,0.22779999398822914,1.0
+deepseek-flash/non-thinking,1,20,percentage,percentage_computed,40,21,0.525,40,11,0.275,0.25,two-sided two-proportion z-test,2.282177322938192,0.022478873366125276,0.4945352140547561
+deepseek-flash/non-thinking,1,20,percentage_computed,fixed_amount,40,11,0.275,40,38,0.95,-0.6749999999999999,two-sided two-proportion z-test,-6.196263394390705,5.781933880837236e-10,2.081496197101405e-08
+deepseek-flash/non-thinking,1,20,percentage,fixed_amount,40,21,0.525,40,38,0.95,-0.42499999999999993,two-sided two-proportion z-test,-4.319746502591387,1.5620853480230137e-05,0.00048424645788713427
+deepseek-flash/non-thinking,1,30,percentage,percentage_computed,40,24,0.6,40,16,0.4,0.19999999999999996,two-sided two-proportion z-test,1.7888543819998315,0.0736382701203027,1.0
+deepseek-flash/non-thinking,1,30,percentage_computed,fixed_amount,40,16,0.4,40,37,0.925,-0.525,two-sided two-proportion z-test,-4.96528831492336,6.859908154570078e-07,2.263769691008126e-05
+deepseek-flash/non-thinking,1,30,percentage,fixed_amount,40,24,0.6,40,37,0.925,-0.32500000000000007,two-sided two-proportion z-test,-3.4154397440716115,0.0006367911660841998,0.017193361484273396
+deepseek-flash/thinking-high,0,10,percentage,percentage_computed,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,10,percentage_computed,fixed_amount,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,10,percentage,fixed_amount,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,20,percentage,percentage_computed,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,20,percentage_computed,fixed_amount,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,20,percentage,fixed_amount,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,30,percentage,percentage_computed,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,30,percentage_computed,fixed_amount,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,0,30,percentage,fixed_amount,40,0,0.0,40,0,0.0,0.0,two-sided Fisher exact test,,1.0,1.0
+deepseek-flash/thinking-high,1,10,percentage,percentage_computed,40,7,0.175,40,3,0.075,0.09999999999999999,two-sided two-proportion z-test,1.3522468075656264,0.17629637444051116,1.0
+deepseek-flash/thinking-high,1,10,percentage_computed,fixed_amount,40,3,0.075,40,3,0.075,0.0,two-sided two-proportion z-test,0.0,1.0,1.0
+deepseek-flash/thinking-high,1,10,percentage,fixed_amount,40,7,0.175,40,3,0.075,0.09999999999999999,two-sided two-proportion z-test,1.3522468075656264,0.17629637444051116,1.0
+deepseek-flash/thinking-high,1,20,percentage,percentage_computed,40,7,0.175,40,3,0.075,0.09999999999999999,two-sided two-proportion z-test,1.3522468075656264,0.17629637444051116,1.0
+deepseek-flash/thinking-high,1,20,percentage_computed,fixed_amount,40,3,0.075,40,3,0.075,0.0,two-sided two-proportion z-test,0.0,1.0,1.0
+deepseek-flash/thinking-high,1,20,percentage,fixed_amount,40,7,0.175,40,3,0.075,0.09999999999999999,two-sided two-proportion z-test,1.3522468075656264,0.17629637444051116,1.0
+deepseek-flash/thinking-high,1,30,percentage,percentage_computed,40,10,0.25,40,1,0.025,0.225,two-sided two-proportion z-test,2.921908521346044,0.003478937041767558,0.0904523630859565
+deepseek-flash/thinking-high,1,30,percentage_computed,fixed_amount,40,1,0.025,40,5,0.125,-0.1,two-sided two-proportion z-test,-1.6979054399120355,0.08952561038680089,1.0
+deepseek-flash/thinking-high,1,30,percentage,fixed_amount,40,10,0.25,40,5,0.125,0.125,two-sided two-proportion z-test,1.4322297480788655,0.15207808079297525,1.0

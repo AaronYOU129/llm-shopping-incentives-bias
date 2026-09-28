@@ -1,0 +1,23 @@
+{
+  "experiment": "incentive_magnitude_mechanism",
+  "phase": "pilot",
+  "planned_trials": 76,
+  "api_base_url": "https://api.deepseek.com",
+  "temperature": 1.0,
+  "request_attempt_cap": 76,
+  "temperature_note": "DeepSeek ignores temperature in thinking mode.",
+  "models": {
+    "deepseek-flash/non-thinking": {
+      "api_model": "deepseek-flash",
+      "thinking": "disabled",
+      "reasoning_effort": "none"
+    },
+    "deepseek-flash/thinking-high": {
+      "api_model": "deepseek-flash",
+      "thinking": "enabled",
+      "reasoning_effort": "high"
+    }
+  },
+  "config_sha256": "495d4233d5efbed4d6edb43b9bda2f3b326843b3057c22d837235b242920b334",
+  "updated_at": "2026-09-28T07:53:18.136004+00:00"
+}

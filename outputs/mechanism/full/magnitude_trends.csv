@@ -1,0 +1,13 @@
+model,framing,nudge,n,partner_choices_10,partner_choices_20,partner_choices_30,trend_statistic,p_value,p_value_holm
+deepseek-flash/non-thinking,percentage,0,120,5,2,6,0.3597267115094452,0.7190515145450929,1.0
+deepseek-flash/non-thinking,percentage,1,120,25,21,24,-0.22677868380553956,0.8205958397554385,1.0
+deepseek-flash/non-thinking,percentage_computed,0,120,0,0,3,2.148344622118299,0.03168638853979371,0.34855027393773086
+deepseek-flash/non-thinking,percentage_computed,1,120,14,11,16,0.47147728524632043,0.6372999368701506,1.0
+deepseek-flash/non-thinking,fixed_amount,0,120,15,25,21,1.3418271643276134,0.17965204228041964,1.0
+deepseek-flash/non-thinking,fixed_amount,1,120,30,38,37,2.3664319132398464,0.017960477526078763,0.21552573031294514
+deepseek-flash/thinking-high,percentage,0,120,0,0,0,,1.0,1.0
+deepseek-flash/thinking-high,percentage,1,120,7,7,10,0.8385254915624211,0.4017356370553977,1.0
+deepseek-flash/thinking-high,percentage_computed,0,120,0,0,0,,1.0,1.0
+deepseek-flash/thinking-high,percentage_computed,1,120,3,3,1,-0.9540650933115629,0.34005069402338695,1.0
+deepseek-flash/thinking-high,fixed_amount,0,120,0,0,0,,1.0,1.0
+deepseek-flash/thinking-high,fixed_amount,1,120,3,3,5,0.7749196197117343,0.4383871579982893,1.0

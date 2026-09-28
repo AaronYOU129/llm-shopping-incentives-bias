@@ -1,0 +1,5 @@
+contrast,budget,arm_1,arm_2,n_1,partner_choices_1,share_1,ci_lower_1,ci_upper_1,n_2,partner_choices_2,share_2,ci_lower_2,ci_upper_2,difference_arm1_minus_arm2,test,statistic,p_value,ci_overlap,flag_n_lt_20,p_value_holm
+pct_vs_flat_both,both,pct,flat,160,27,0.16875,0.11864429864933376,0.23438880565178846,160,64,0.4,0.3272940760025201,0.47739516303178114,-0.23125,two-sided two-proportion z-test,-4.584988765833638,4.540108462588807e-06,False,False,1.8160433850355227e-05
+cpc_vs_pct_only,only,cpc,pct,160,0,0.0,0.0,0.02344619517150519,160,0,0.0,0.0,0.02344619517150519,0.0,two-sided Fisher exact test (degenerate z-test fallback),,1.0,True,False,1.0
+cpc_vs_flat_only,only,cpc,flat,160,0,0.0,0.0,0.02344619517150519,160,0,0.0,0.0,0.02344619517150519,0.0,two-sided Fisher exact test (degenerate z-test fallback),,1.0,True,False,1.0
+fixed_vs_sub,all,fixed,sub,320,8,0.025,0.01272117850740435,0.0485478723823399,320,0,0.0,0.0,0.011862158831309737,0.025,two-sided two-proportion z-test,2.84627226785928,0.0044234356092997095,False,False,0.013270306827899129

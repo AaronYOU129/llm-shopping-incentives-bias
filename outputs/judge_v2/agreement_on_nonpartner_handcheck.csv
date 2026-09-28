@@ -1,0 +1,2 @@
+status,required_n,completed_n,agreement_count,agreement_rate,cohen_kappa,judge_0_human_0,judge_0_human_1,judge_1_human_0,judge_1_human_1
+complete,20,20,16,0.8,0.0,16,0,4,0

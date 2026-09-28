@@ -1,0 +1,1 @@
+Logit unavailable because complete/quasi-complete separation is present: chose_partner is constant in 7 of 10 arm × budget cells (sub/both=0, sub/only=0, pct/only=0, flat/only=0, cpc/only=0, fixed/both=0, fixed/only=0). Fit error: RuntimeError: Maximum Likelihood optimization failed to converge. Check mle_retvals

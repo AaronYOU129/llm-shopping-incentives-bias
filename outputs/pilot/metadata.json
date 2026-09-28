@@ -1,0 +1,22 @@
+{
+  "experiment": "platform_pricing_bias",
+  "phase": "pilot",
+  "planned_trials": 80,
+  "api_base_url": "https://api.deepseek.com",
+  "temperature": 1.0,
+  "temperature_note": "DeepSeek ignores temperature in thinking mode.",
+  "models": {
+    "deepseek-flash/non-thinking": {
+      "api_model": "deepseek-flash",
+      "thinking": "disabled",
+      "reasoning_effort": "none"
+    },
+    "deepseek-flash/thinking-high": {
+      "api_model": "deepseek-flash",
+      "thinking": "enabled",
+      "reasoning_effort": "high"
+    }
+  },
+  "config_sha256": "e80f3950351fcb53e28ff577d1df069e4d89639ee03880843b35ab7cd3a19f97",
+  "updated_at": "2026-09-22T09:12:04.832785+00:00"
+}

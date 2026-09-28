@@ -1,0 +1,2 @@
+trial_id,error_type,error_message,raw_response,judge_prompt_sha,ts
+full:deepseek-flash/thinking-high:fixed:shoes:only:nudge=1:rep=20,budget_exhausted,Authorized judge request-attempt cap reached,,2405a8488e1b761b8cc3dd0251408d76db4ee4e803cc401d77b4db1ca92b28f1,2026-09-24T02:55:28.854868+00:00
