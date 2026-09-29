@@ -1,0 +1,5 @@
+condition,framing,n_pairs,nonthinking_partner_choices,nonthinking_share,thinking_partner_choices,thinking_share,thinking_minus_nonthinking,nonthinking_0_thinking_1,nonthinking_1_thinking_0,mcnemar_exact_p_value,nonthinking_mean_extra_spend,thinking_mean_extra_spend
+incentive,percentage,240,66,0.275,170,0.7083333333333334,0.43333333333333335,110,6,7.547275303719452e-26,21.416666666666668,55.833333333333336
+control,no_incentive,40,0,0.0,0,0.0,0.0,0,0,1.0,0.0,0.0
+incentive,percentage_computed,240,93,0.3875,113,0.4708333333333333,0.08333333333333331,46,26,0.02446090732832437,30.541666666666668,37.458333333333336
+incentive,fixed_amount,240,101,0.42083333333333334,133,0.5541666666666667,0.13333333333333336,61,29,0.000972760707951367,33.291666666666664,43.791666666666664

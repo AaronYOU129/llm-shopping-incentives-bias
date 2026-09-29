@@ -2,9 +2,9 @@
 
 ## Status
 
-- **State:** Original study, mechanism extension, and Qwen paired replication complete
+- **State:** Original study, mechanism extension, and Qwen mode comparison complete
 - **Owner:** User
-- **Last reviewed:** 2026-09-23
+- **Last reviewed:** 2026-09-29
 
 ## Goal
 
@@ -421,3 +421,79 @@ fixed Qwen snapshot with thinking disabled.
 - [x] The run never exceeds 760 submissions and preserves failures without guessing.
 - [x] A complete run contains 760 valid unique Qwen results paired to the DeepSeek
   source IDs and regenerates all comparison outputs without model calls.
+
+## Qwen Thinking-Mode Extension
+
+### Goal
+
+Test whether the large reduction in Partner recommendations observed under DeepSeek
+thinking-high also appears when the pinned Qwen snapshot is switched from non-thinking
+to thinking while every shopping prompt remains byte-identical.
+
+### Approved Pilot Design
+
+- Use the same `qwen3.7-plus-2026-05-26` snapshot and Beijing OpenAI-compatible endpoint
+  as the completed Qwen non-thinking replication.
+- Enable thinking with `extra_body={"enable_thinking": true}` and retain temperature
+  1.0 so thinking mode is the only requested inference-setting change.
+- Select `rep=1` from every source cell: 36 incentive cells plus two no-payment control
+  cells, producing 38 prompt-matched pilot requests.
+- Require every prompt hash to match the saved DeepSeek source and the completed Qwen
+  non-thinking result before any request is submitted.
+- Store all artifacts under `outputs/qwen_thinking/`, separate from the completed Qwen
+  non-thinking replication.
+- Permit at most 38 pilot submissions with no automatic retries. Stop after the pilot;
+  the remaining 722 prompts require separate user approval.
+- Preserve the 38 pilot rows for inclusion in a later 760-prompt run so approved pilot
+  requests are never repeated.
+
+### Interface and Acceptance Criteria
+
+- `python run_all.py qwen-thinking-validate` validates all 38 pairs without API calls.
+- `python run_all.py qwen-thinking-pilot --approve-qwen-thinking-pilot` runs or resumes
+  only the explicitly approved pilot and stops without starting a full run.
+- The manifest contains exactly one prompt from every framing × magnitude × scenario ×
+  nudge cell plus one control per scenario.
+- A complete pilot contains 38 valid unique results from no more than 38 submissions,
+  with model snapshot, prompt hashes, thinking flag, and terminal outcomes persisted.
+
+### Approved Full Extension
+
+- The user approved the remaining 722 prompt-matched requests on 2026-09-29.
+- Expand the manifest to all 760 source prompts while preserving the 38 pilot results.
+- Raise the durable cumulative cap from 38 to exactly 760; do not retry failed calls.
+- Compare thinking and non-thinking outcomes one-to-one by source trial identifier and
+  report Partner-choice differences, exact paired tests, and mechanical user spending.
+- `python run_all.py qwen-thinking-full --approve-qwen-thinking-full` runs or resumes
+  the extension, then analyzes only after all 760 valid pairs are present.
+- After one connection failure exhausted the 760-request cap with 759 valid results,
+  the user approved exactly one replacement on 2026-09-29. Only the failed trial may
+  receive attempt 2, and the cumulative hard cap is 761.
+
+## Simple Economic Model
+
+### Goal and Scope
+
+Add a short, post-hoc economic interpretation of the matched-payout experiment in
+`docs/simple-model.md`. Retain exactly two propositions: payoff-equivalent wording
+invariance under the benchmark, and wording-induced steering with a mechanical
+consumer-spending consequence. Do not add structural estimation, latent-mechanism
+comparisons, new experimental results, or API calls.
+
+### Requirements
+
+- Define commission as revenue conditional on a Partner sale, distinguishing it from
+  expected platform revenue; hold the model, mode, guidance, and shopping context fixed
+  when comparing wordings.
+- State full consumer adoption and equal product quality as assumptions, and clarify
+  that payoff equivalence applies at the displayed prices, not at every possible price.
+- Distinguish weak from strict steering and an unchanged per-sale commission from
+  unchanged expected totals; assume changing wording itself is costless.
+- Link the propositions to existing reports without claiming observed purchases,
+  identified internal cognition, or a validated optimal wording policy.
+
+### Acceptance Criteria
+
+- [x] The note contains one simple setup and exactly two propositions with proofs.
+- [x] Formula signs, monetary quantities, assumptions, and report links are checked.
+- [x] The README links to the note; progress and the decision log record this scope.

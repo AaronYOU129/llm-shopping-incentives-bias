@@ -4,11 +4,11 @@ Purpose:
     Prompt-hash pairing isolates model family while durable caps bound paid requests.
 
 Inputs:
-    config_qwen.yaml; config_mechanism.yaml; outputs/mechanism/full/results.csv;
-    QWEN_API_KEY; optional saved files under outputs/qwen_comparison/.
+    config_qwen.yaml or config_qwen_thinking.yaml; config_mechanism.yaml;
+    saved DeepSeek/Qwen source results; QWEN_API_KEY; optional resumable artifacts.
 
 Outputs:
-    Qwen results, failures, request-attempt ledger, and protocol metadata.
+    Mode-isolated Qwen results, failures, request ledger, metadata, and pilot report.
 
 Key Steps:
     1. Reconstruct and verify every saved DeepSeek source prompt.
@@ -37,6 +37,7 @@ import json
 import re
 import threading
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -61,7 +62,8 @@ from mechanism_experiment import (
 )
 
 
-EXPECTED_TRIALS = 760
+EXPECTED_SOURCE_TRIALS = 760
+CELLS_PER_REPLICATION = 38
 _QWEN_THREAD_STATE = threading.local()
 
 
@@ -83,6 +85,14 @@ class QwenTrial:
     brands: Mapping[str, str]
     prompt: str
     prompt_sha: str
+
+
+@dataclass(frozen=True)
+class QwenCompletion:
+    """Keep the final answer separate from optional model reasoning content."""
+
+    content: str
+    reasoning_content: str
 
 
 class RequestRateLimiter:
@@ -124,7 +134,21 @@ def run_qwen_comparison(
     existing_rows = read_csv_rows(paths["results"])
     validate_qwen_results(existing_rows, trials, config)
     completed_ids = {row["trial_id"] for row in existing_rows}
-    pending_trials = [trial for trial in trials if trial.trial_id not in completed_ids]
+    attempt_counts = Counter(
+        row["trial_id"] for row in read_csv_rows(paths["attempts"])
+    )
+    replacement_ids = set(
+        config["experiment"].get("authorized_replacement_trial_ids", [])
+    )
+    pending_requests: list[tuple[QwenTrial, int]] = []
+    for trial in trials:
+        if trial.trial_id in completed_ids:
+            continue
+        prior_attempts = attempt_counts[trial.trial_id]
+        if prior_attempts == 0:
+            pending_requests.append((trial, 1))
+        elif trial.trial_id in replacement_ids and prior_attempts == 1:
+            pending_requests.append((trial, 2))
     abort_event = threading.Event()
     rate_limiter = RequestRateLimiter(
         config["experiment"]["minimum_request_interval_seconds"]
@@ -135,6 +159,7 @@ def run_qwen_comparison(
             executor.submit(
                 execute_qwen_trial,
                 trial,
+                trial_attempt,
                 config,
                 api_key,
                 attempt_budget,
@@ -143,7 +168,7 @@ def run_qwen_comparison(
                 abort_event,
                 rate_limiter,
             )
-            for trial in pending_trials
+            for trial, trial_attempt in pending_requests
         ]
         for completed_count, future in enumerate(as_completed(futures), 1):
             future.result()
@@ -168,6 +193,79 @@ def validate_qwen_only(config: Mapping[str, Any]) -> dict[str, int]:
     }
 
 
+def write_qwen_thinking_pilot_report(config: Mapping[str, Any]) -> Path:
+    """Write a compact review artifact from a complete thinking-mode pilot."""
+    trials = generate_qwen_trials(config)
+    paths = prepare_qwen_files(config)
+    rows = read_csv_rows(paths["results"])
+    validate_qwen_results(rows, trials, config)
+    if len(rows) != len(trials):
+        raise ValueError(f"Qwen thinking pilot is incomplete: {len(rows)}/{len(trials)}")
+
+    source_rows = read_csv_rows(Path(config["source"]["qwen_nonthinking_results"]))
+    source_by_id = {row["source_trial_id"]: row for row in source_rows}
+    framing_counts: dict[str, list[int]] = {}
+    transitions = {"0->0": 0, "0->1": 0, "1->0": 0, "1->1": 0}
+    for row in rows:
+        framing_counts.setdefault(row["framing"], [0, 0])
+        framing_counts[row["framing"]][0] += int(row["chose_partner"])
+        framing_counts[row["framing"]][1] += 1
+        before = int(source_by_id[row["source_trial_id"]]["chose_partner"])
+        after = int(row["chose_partner"])
+        transitions[f"{before}->{after}"] += 1
+
+    lines = [
+        "# Qwen Thinking Pilot",
+        "",
+        f"- Model snapshot: `{config['model']['api_model']}`",
+        "- Thinking enabled: `true`",
+        f"- Valid results: {len(rows)}/{len(trials)}",
+        f"- Submitted requests: {len(read_csv_rows(paths['attempts']))}",
+        f"- Failure events: {len(read_csv_rows(paths['failures']))}",
+        "- Remaining full-run prompts submitted: 0",
+        "",
+        "## Partner choices by framing",
+        "",
+        "| Framing | Partner choices | n | Share |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    for framing in ("no_incentive", "percentage", "percentage_computed", "fixed_amount"):
+        choices, count = framing_counts.get(framing, [0, 0])
+        share = choices / count if count else 0
+        lines.append(f"| {framing} | {choices} | {count} | {share:.1%} |")
+    lines.extend([
+        "",
+        "## Paired changes versus Qwen non-thinking",
+        "",
+        "| Non-thinking → thinking | Count |",
+        "| --- | ---: |",
+    ])
+    for direction in ("0->0", "0->1", "1->0", "1->1"):
+        lines.append(f"| {direction} | {transitions[direction]} |")
+    reasoning_count = sum(bool(row.get("reasoning_content", "")) for row in rows)
+    lines.extend([
+        "",
+        f"Reasoning content was returned for {reasoning_count}/{len(rows)} responses.",
+        "",
+        "## Five unedited final responses",
+        "",
+    ])
+    for row in sorted(rows, key=lambda item: item["trial_id"])[:5]:
+        lines.extend([
+            f"### `{row['trial_id']}`",
+            "",
+            "````json",
+            row["raw_response"],
+            "````",
+            "",
+        ])
+
+    report_path = Path(config["analysis"]["pilot_report_path"])
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return report_path
+
+
 def generate_qwen_trials(config: Mapping[str, Any]) -> list[QwenTrial]:
     """Reconstruct source prompts and require hashes to match saved DeepSeek rows."""
     mechanism_config = load_config(config["source"]["mechanism_config"])
@@ -175,13 +273,43 @@ def generate_qwen_trials(config: Mapping[str, Any]) -> list[QwenTrial]:
     source_rows = read_csv_rows(Path(config["source"]["mechanism_results"]))
     validate_mechanism_results(source_rows, all_source_trials, mechanism_config)
     source_row_by_id = {row["trial_id"]: row for row in source_rows}
+    selected_reps = config.get("selection", {}).get("selected_reps")
     selected = [
         trial for trial in all_source_trials
         if trial.model == config["source"]["model"]
+        and (selected_reps is None or trial.rep in selected_reps)
     ]
     trials = [build_qwen_trial(config, trial, source_row_by_id) for trial in selected]
     validate_qwen_manifest(trials, config)
+    validate_qwen_nonthinking_pairing(trials, config)
     return trials
+
+
+def validate_qwen_nonthinking_pairing(
+    trials: Iterable[QwenTrial], config: Mapping[str, Any]
+) -> None:
+    """Require thinking prompts to match completed Qwen non-thinking observations."""
+    source_path = config["source"].get("qwen_nonthinking_results")
+    if not source_path:
+        return
+    rows = read_csv_rows(Path(source_path))
+    if len(rows) != EXPECTED_SOURCE_TRIALS:
+        raise AssertionError(
+            f"Expected {EXPECTED_SOURCE_TRIALS} saved Qwen source rows, found {len(rows)}"
+        )
+    row_by_source_id = {row["source_trial_id"]: row for row in rows}
+    if len(row_by_source_id) != len(rows):
+        raise AssertionError("Saved Qwen source_trial_id values must be unique")
+    for trial in trials:
+        row = row_by_source_id.get(trial.source_trial_id)
+        if row is None:
+            raise AssertionError(
+                f"Missing saved Qwen source result: {trial.source_trial_id}"
+            )
+        if row["prompt_sha"] != trial.prompt_sha:
+            raise AssertionError(
+                f"Saved Qwen prompt hash mismatch: {trial.source_trial_id}"
+            )
 
 
 def build_qwen_trial(
@@ -195,8 +323,9 @@ def build_qwen_trial(
     source_row = source_row_by_id[source_trial.trial_id]
     if source_row["prompt_sha"] != source_trial.prompt_sha:
         raise AssertionError(f"Source prompt hash mismatch: {source_trial.trial_id}")
+    trial_prefix = config["experiment"].get("trial_id_prefix", "qwen")
     return QwenTrial(
-        trial_id=f"qwen:{source_trial.trial_id}",
+        trial_id=f"{trial_prefix}:{source_trial.trial_id}",
         source_trial_id=source_trial.trial_id,
         model=config["model"]["label"],
         condition=source_trial.condition,
@@ -215,6 +344,7 @@ def build_qwen_trial(
 
 def execute_qwen_trial(
     trial: QwenTrial,
+    trial_attempt: int,
     config: Mapping[str, Any],
     api_key: str,
     attempt_budget: AttemptBudget,
@@ -232,7 +362,7 @@ def execute_qwen_trial(
             )
         )
         return
-    if not attempt_budget.reserve(trial.trial_id, 1):
+    if not attempt_budget.reserve(trial.trial_id, trial_attempt):
         failure_appender.append(
             build_qwen_failure_row(
                 trial, "budget_exhausted", "Authorized Qwen request cap reached", ""
@@ -241,7 +371,7 @@ def execute_qwen_trial(
         return
     rate_limiter.wait()
     try:
-        raw_response = request_qwen_completion(config, trial, api_key)
+        completion = request_qwen_completion(config, trial, api_key)
     except Exception as error:  # SDK errors share one redacted persistence boundary.
         abort_event.set()
         failure_appender.append(
@@ -251,19 +381,25 @@ def execute_qwen_trial(
         )
         return
     try:
-        parsed = parse_model_response(raw_response)
+        parsed = parse_model_response(completion.content)
     except ValueError as error:
         failure_appender.append(
-            build_qwen_failure_row(trial, "parse_error", str(error), raw_response)
+            build_qwen_failure_row(trial, "parse_error", str(error), completion.content)
         )
         return
-    result_appender.append(build_qwen_result_row(config, trial, parsed, raw_response))
+    result_appender.append(build_qwen_result_row(
+        config,
+        trial,
+        parsed,
+        completion.content,
+        completion.reasoning_content,
+    ))
 
 
 def request_qwen_completion(
     config: Mapping[str, Any], trial: QwenTrial, api_key: str
-) -> str:
-    """Submit the source user message with Qwen thinking explicitly disabled."""
+) -> QwenCompletion:
+    """Submit one immutable user message with the configured Qwen thinking mode."""
     client = get_qwen_thread_client(config, api_key)
     response = client.chat.completions.create(
         model=config["model"]["api_model"],
@@ -276,7 +412,10 @@ def request_qwen_completion(
     content = response.choices[0].message.content
     if not isinstance(content, str) or not content:
         raise ValueError("Qwen response content was empty")
-    return content
+    reasoning_content = getattr(response.choices[0].message, "reasoning_content", "")
+    if not isinstance(reasoning_content, str):
+        reasoning_content = ""
+    return QwenCompletion(content=content, reasoning_content=reasoning_content)
 
 
 def build_qwen_result_row(
@@ -284,6 +423,7 @@ def build_qwen_result_row(
     trial: QwenTrial,
     parsed: Mapping[str, str],
     raw_response: str,
+    reasoning_content: str = "",
 ) -> dict[str, Any]:
     """Derive outcomes using the same rules as the source mechanism experiment."""
     chose_partner = int(parsed["recommended"] == trial.partner_position)
@@ -314,6 +454,8 @@ def build_qwen_result_row(
         "prompt_sha": trial.prompt_sha,
         "ts": utc_now(),
     }
+    if "reasoning_content" in config["output"]["result_columns"]:
+        row["reasoning_content"] = reasoning_content
     assert_qwen_result_row(row, config)
     return row
 
@@ -347,20 +489,39 @@ def validate_qwen_config(config: Mapping[str, Any]) -> None:
     if missing:
         raise ValueError(f"Missing Qwen config sections: {sorted(missing)}")
     experiment = config["experiment"]
-    if experiment["request_attempt_cap"] != EXPECTED_TRIALS:
-        raise ValueError(f"Qwen request cap must equal {EXPECTED_TRIALS}")
+    selected_reps = config.get("selection", {}).get("selected_reps")
+    expected_trials = EXPECTED_SOURCE_TRIALS
+    if selected_reps is not None:
+        if not selected_reps or len(selected_reps) != len(set(selected_reps)):
+            raise ValueError("Qwen selected_reps must be unique and non-empty")
+        if any(not isinstance(rep, int) or not 1 <= rep <= 20 for rep in selected_reps):
+            raise ValueError("Qwen selected_reps must be integers from 1 through 20")
+        expected_trials = CELLS_PER_REPLICATION * len(selected_reps)
+    replacement_ids = experiment.get("authorized_replacement_trial_ids", [])
+    if len(replacement_ids) != len(set(replacement_ids)):
+        raise ValueError("Authorized Qwen replacement trial IDs must be unique")
+    authorized_cap = expected_trials + len(replacement_ids)
+    if experiment["request_attempt_cap"] != authorized_cap:
+        raise ValueError(f"Qwen request cap must equal {authorized_cap}")
     if experiment["temperature"] != 1.0:
         raise ValueError("Qwen temperature must remain 1.0")
     if not 1 <= experiment["max_workers"] <= 4:
         raise ValueError("Qwen max_workers must be between one and four")
     if experiment["minimum_request_interval_seconds"] < 1.0:
         raise ValueError("Qwen request interval must respect the 60 RPM limit")
-    if config["model"] != {
-        "label": "qwen3.7-plus/non-thinking",
-        "api_model": "qwen3.7-plus-2026-05-26",
-        "enable_thinking": False,
-    }:
+    approved_modes = {
+        ("qwen3.7-plus/non-thinking", False),
+        ("qwen3.7-plus/thinking", True),
+    }
+    model = config["model"]
+    if model.get("api_model") != "qwen3.7-plus-2026-05-26" or (
+        model.get("label"), model.get("enable_thinking")
+    ) not in approved_modes:
         raise ValueError("Qwen model snapshot or thinking mode has changed")
+    if model["enable_thinking"] and not config["source"].get(
+        "qwen_nonthinking_results"
+    ):
+        raise ValueError("Qwen thinking runs require saved non-thinking source results")
     if config["source"]["model"] != "deepseek-flash/non-thinking":
         raise ValueError("Qwen source model must remain DeepSeek non-thinking")
 
@@ -368,10 +529,18 @@ def validate_qwen_config(config: Mapping[str, Any]) -> None:
 def validate_qwen_manifest(
     trials: Iterable[QwenTrial], config: Mapping[str, Any]
 ) -> None:
-    """Require 760 unique paired IDs and valid prompt hashes."""
+    """Require the capped number of unique paired IDs and valid prompt hashes."""
     trial_list = list(trials)
-    if len(trial_list) != EXPECTED_TRIALS:
-        raise AssertionError(f"Expected {EXPECTED_TRIALS} Qwen trials, found {len(trial_list)}")
+    selected_reps = config.get("selection", {}).get("selected_reps")
+    expected_trials = (
+        EXPECTED_SOURCE_TRIALS
+        if selected_reps is None
+        else CELLS_PER_REPLICATION * len(selected_reps)
+    )
+    if len(trial_list) != expected_trials:
+        raise AssertionError(
+            f"Expected {expected_trials} Qwen trials, found {len(trial_list)}"
+        )
     for attribute in ("trial_id", "source_trial_id"):
         values = [getattr(trial, attribute) for trial in trial_list]
         if len(values) != len(set(values)):
@@ -383,6 +552,14 @@ def validate_qwen_manifest(
             raise AssertionError("Qwen prompt_sha must be SHA-256")
         if hash_text(trial.prompt) != trial.prompt_sha:
             raise AssertionError(f"Qwen prompt text/hash mismatch: {trial.trial_id}")
+    replacement_ids = set(
+        config["experiment"].get("authorized_replacement_trial_ids", [])
+    )
+    unknown_replacements = replacement_ids - {trial.trial_id for trial in trial_list}
+    if unknown_replacements:
+        raise AssertionError(
+            f"Unknown authorized Qwen replacements: {sorted(unknown_replacements)}"
+        )
 
 
 def validate_qwen_results(

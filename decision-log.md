@@ -408,3 +408,134 @@ rate was statistically indistinguishable from fixed amount. Qwen was also far mo
 conditional on the explicit platform-priority nudge: 1/360 Partner choices without it
 and 259/360 with it. These results support prompt sensitivity across model families but
 not a universal fixed-amount-specific mechanism.
+
+## DEC-012 — Pilot the pinned Qwen snapshot with thinking enabled
+
+- **Status:** Accepted
+- **Date:** 2026-09-29
+- **Decision makers:** User and implementing agent
+- **Related specification sections:** Qwen Thinking-Mode Extension
+
+### Context
+
+DeepSeek thinking-high sharply reduced Partner recommendations and eliminated the strong
+fixed-amount ordering seen in its non-thinking mode. The completed Qwen replication used
+only non-thinking mode, so the inference-mode result has not been tested across model
+families.
+
+### Decision
+
+Replay `rep=1` from all 38 Qwen source cells on `qwen3.7-plus-2026-05-26` with thinking
+enabled. Keep prompt text, temperature, endpoint, and all experimental factors fixed;
+verify hashes against both saved source datasets; allow exactly 38 submissions with no
+automatic retries; isolate artifacts under `outputs/qwen_thinking/`; and stop after the
+pilot. Preserve completed pilot rows for any later full run.
+
+### Rationale
+
+The balanced pilot verifies API behavior and provides an early cross-model mode check
+at minimal cost. Reusing the same prompt instances makes each pilot observation directly
+paired with the existing Qwen non-thinking outcome.
+
+### Consequences
+
+- **Positive:** The pilot separates Qwen inference mode from model-family differences.
+- **Positive:** Pilot requests can count toward a later 760-prompt extension.
+- **Negative:** Thirty-eight observations are suitable for protocol review and broad
+  behavioral screening, not definitive cell-level inference.
+- **Follow-up:** Implement offline checks, run the capped pilot, present results, and
+  stop before any additional thinking-mode requests.
+
+### Completion outcome
+
+The pilot completed with 38 valid results from exactly 38 submissions and no failures;
+all responses returned separate reasoning content. Partner choice increased from 15/36
+under paired non-thinking prompts to 18/36 under thinking, with no detectable paired
+difference (exact p=0.5811). Thinking produced five Partner choices without the platform
+nudge versus none in the paired non-thinking pilot subset. The remaining 722 prompts
+were not submitted and still require separate authorization.
+
+## DEC-013 — Complete the Qwen thinking-mode extension
+
+- **Status:** Accepted
+- **Date:** 2026-09-29
+- **Decision makers:** User
+- **Related specification sections:** Qwen Thinking-Mode Extension
+
+### Decision
+
+Resume from the 38 saved pilot rows and submit the remaining 722 prompt-matched trials.
+Use the same pinned snapshot, thinking setting, temperature, prompts, four-worker limit,
+and 1.1-second global request interval. Raise the cumulative durable cap to exactly 760,
+retain the no-retry policy, and generate a paired mode comparison after completion.
+
+### Rationale
+
+The pilot was directionally different from DeepSeek but too small for mechanism claims.
+The full paired design estimates Qwen's inference-mode effect without spending again on
+the completed pilot prompts.
+
+### Consequences
+
+- **Positive:** All 760 Qwen thinking outcomes are directly paired to non-thinking runs.
+- **Negative:** Failed submissions remain unresolved unless separately authorized.
+- **Follow-up:** Verify 760 valid rows, the request cap, pairing, and saved-data analysis.
+
+## DEC-014 — Authorize one Qwen thinking replacement request
+
+- **Status:** Accepted
+- **Date:** 2026-09-29
+- **Decision makers:** User
+- **Related specification sections:** Qwen Thinking-Mode Extension
+
+### Decision
+
+Raise the cumulative Qwen thinking cap from 760 to exactly 761 and permit a second
+attempt only for `fixed_amount:rate=10:shoes:nudge=0:rep=20`, whose first submission
+ended with a connection error. Keep every other previously attempted failure ineligible.
+
+### Rationale
+
+This is the smallest auditable expansion that can complete all 760 paired observations.
+
+### Consequences
+
+- **Positive:** The paired analysis can use the complete planned manifest.
+- **Negative:** The request ledger contains 761 submissions for 760 valid results.
+- **Follow-up:** Run the one replacement, analyze saved results, and verify the cap.
+
+### Completion outcome
+
+The replacement succeeded, completing 760 valid prompt pairs from 761 submissions.
+Thinking increased aggregate incentive-condition Partner choice by 21.7 percentage
+points and primarily changed behavior when the explicit platform nudge was absent.
+
+## DEC-015 — Keep a two-proposition economic interpretation
+
+- **Status:** Accepted
+- **Date:** 2026-09-29
+- **Decision makers:** User
+- **Related specification sections:** Simple Economic Model
+
+### Decision
+
+Document one simple recommendation model and exactly two propositions: payoff-only
+wording invariance and wording-induced steering with its expected spending consequence.
+Omit the proposed perceived-magnitude versus intent-cue decomposition, structural
+estimation, slope ratios, and likelihood-ratio tests from this version.
+
+### Rationale
+
+The user requested a simple, reasonable economic formalization rather than additional
+mechanism identification. Equal conditional payouts allow a clear framing benchmark;
+recommendation differences map transparently into spending under full adoption.
+
+### Consequences
+
+- **Positive:** The note links the experimental contrasts to an explicit economic
+  benchmark and a consumer-spending implication without adding estimation machinery.
+- **Limitations:** This is a post-hoc interpretation. It neither measures purchases nor
+  identifies internal cognition; no universal best wording is assumed. Costless steering
+  means unchanged conditional commission and an assumed zero cost of changing wording,
+  not unchanged expected total commission payments.
+- **Scope:** Documentation only; no new model calls, fits, or changes to saved outcomes.

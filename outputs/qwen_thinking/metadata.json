@@ -1,0 +1,21 @@
+{
+  "experiment": "qwen_thinking_full",
+  "planned_trials": 760,
+  "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "temperature": 1.0,
+  "request_attempt_cap": 761,
+  "minimum_request_interval_seconds": 1.1,
+  "model": {
+    "label": "qwen3.7-plus/thinking",
+    "api_model": "qwen3.7-plus-2026-05-26",
+    "enable_thinking": true
+  },
+  "source": {
+    "mechanism_config": "config_mechanism.yaml",
+    "mechanism_results": "outputs/mechanism/full/results.csv",
+    "qwen_nonthinking_results": "outputs/qwen_comparison/results.csv",
+    "model": "deepseek-flash/non-thinking"
+  },
+  "config_sha256": "69c042524e9c4abef38ad51dfb0cfa272834696504cc876d8ec92b6a743b9712",
+  "updated_at": "2026-09-29T06:51:31.483151+00:00"
+}

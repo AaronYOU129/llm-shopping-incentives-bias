@@ -20,6 +20,7 @@ import pytest
 
 import qwen_analysis
 import qwen_comparison
+import qwen_thinking_analysis
 from experiment import CsvAppender, load_config, read_csv_rows
 
 
@@ -27,6 +28,18 @@ from experiment import CsvAppender, load_config, read_csv_rows
 def qwen_config() -> dict:
     """Load the approved Qwen paired-replication configuration."""
     return load_config("config_qwen.yaml")
+
+
+@pytest.fixture()
+def qwen_thinking_config() -> dict:
+    """Load the approved prompt-matched Qwen thinking pilot configuration."""
+    return load_config("config_qwen_thinking.yaml")
+
+
+@pytest.fixture()
+def qwen_thinking_full_config() -> dict:
+    """Load the approved full Qwen thinking configuration."""
+    return load_config("config_qwen_thinking_full.yaml")
 
 
 def test_qwen_manifest_matches_all_saved_source_prompts(qwen_config: dict) -> None:
@@ -63,12 +76,16 @@ def test_qwen_request_uses_pinned_nonthinking_parameters(
     )
     trial = qwen_comparison.generate_qwen_trials(qwen_config)[0]
 
-    qwen_comparison.request_qwen_completion(qwen_config, trial, "dummy-key")
+    completion = qwen_comparison.request_qwen_completion(
+        qwen_config, trial, "dummy-key"
+    )
 
     assert captured["model"] == "qwen3.7-plus-2026-05-26"
     assert captured["messages"] == [{"role": "user", "content": trial.prompt}]
     assert captured["temperature"] == 1.0
     assert captured["extra_body"] == {"enable_thinking": False}
+    assert completion.content == '{"recommended":"A","reply":"Choose A."}'
+    assert completion.reasoning_content == ""
 
 
 def test_complete_qwen_run_resumes_without_extra_calls(
@@ -90,10 +107,13 @@ def test_complete_qwen_run_resumes_without_extra_calls(
         nonlocal call_count
         call_count += 1
         cheap_position = "B" if trial.partner_position == "A" else "A"
-        return json.dumps({
-            "recommended": cheap_position,
-            "reply": "Choose the cheaper equivalent listing.",
-        })
+        return qwen_comparison.QwenCompletion(
+            content=json.dumps({
+                "recommended": cheap_position,
+                "reply": "Choose the cheaper equivalent listing.",
+            }),
+            reasoning_content="",
+        )
 
     monkeypatch.setattr(qwen_comparison, "request_qwen_completion", fake_request)
     monkeypatch.setattr(qwen_comparison.RequestRateLimiter, "wait", lambda _self: None)
@@ -156,6 +176,252 @@ def test_qwen_analysis_regenerates_all_outputs(
     assert set(paired["framing"]) == {
         "no_incentive", "percentage", "percentage_computed", "fixed_amount"
     }
+
+
+def test_qwen_thinking_pilot_is_balanced_and_prompt_paired(
+    qwen_thinking_config: dict,
+) -> None:
+    """Select one saved prompt per cell while preserving exact non-thinking pairing."""
+    counts = qwen_comparison.validate_qwen_only(qwen_thinking_config)
+    trials = qwen_comparison.generate_qwen_trials(qwen_thinking_config)
+
+    assert counts["paired_trials"] == 38
+    assert len(trials) == 38
+    assert all(trial.rep == 1 for trial in trials)
+    assert all(trial.model == "qwen3.7-plus/thinking" for trial in trials)
+    assert sum(trial.condition == "control" for trial in trials) == 2
+    assert sum(trial.condition == "incentive" for trial in trials) == 36
+    incentive_cells = {
+        (trial.framing, trial.incentive_rate, trial.scenario, trial.nudge)
+        for trial in trials if trial.condition == "incentive"
+    }
+    assert len(incentive_cells) == 36
+
+
+def test_qwen_thinking_full_reuses_pilot_ids_and_covers_all_prompts(
+    qwen_thinking_config: dict,
+    qwen_thinking_full_config: dict,
+) -> None:
+    """Expand to 760 pairs while retaining every completed pilot identifier."""
+    pilot = qwen_comparison.generate_qwen_trials(qwen_thinking_config)
+    full = qwen_comparison.generate_qwen_trials(qwen_thinking_full_config)
+
+    assert len(full) == 760
+    assert {trial.trial_id for trial in pilot} <= {trial.trial_id for trial in full}
+    assert len({trial.source_trial_id for trial in full}) == 760
+
+
+def test_qwen_thinking_summary_uses_paired_transitions() -> None:
+    """Base the mode test and spending estimates on prompt-paired outcomes."""
+    paired = pd.DataFrame({
+        "scope": ["all"] * 4,
+        "nonthinking_choice": [0, 0, 1, 1],
+        "chose_partner": [0, 1, 0, 1],
+        "user_extra_spend": [90, 90, 70, 70],
+    })
+
+    row = qwen_thinking_analysis.summarize_paired_groups(paired, ["scope"]).iloc[0]
+
+    assert row.n_pairs == 4
+    assert row.nonthinking_partner_choices == 2
+    assert row.thinking_partner_choices == 2
+    assert row.nonthinking_0_thinking_1 == 1
+    assert row.nonthinking_1_thinking_0 == 1
+    assert row.mcnemar_exact_p_value == 1.0
+    assert row.nonthinking_mean_extra_spend == 35.0
+    assert row.thinking_mean_extra_spend == 40.0
+
+
+def test_qwen_thinking_request_uses_same_snapshot_and_returns_reasoning(
+    monkeypatch: pytest.MonkeyPatch,
+    qwen_thinking_config: dict,
+) -> None:
+    """Enable thinking on the pinned snapshot and retain its separate reasoning field."""
+    captured: dict = {}
+
+    class FakeCompletions:
+        """Capture thinking parameters and return both reasoning and final JSON."""
+
+        def create(self, **parameters: object) -> SimpleNamespace:
+            """Return an OpenAI-shaped hybrid-thinking response."""
+            captured.update(parameters)
+            message = SimpleNamespace(
+                content='{"recommended":"A","reply":"Choose A."}',
+                reasoning_content="The listings are equivalent, so compare prices.",
+            )
+            return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+    fake_client = SimpleNamespace(
+        chat=SimpleNamespace(completions=FakeCompletions())
+    )
+    monkeypatch.setattr(
+        qwen_comparison, "get_qwen_thread_client", lambda _config, _key: fake_client
+    )
+    trial = qwen_comparison.generate_qwen_trials(qwen_thinking_config)[0]
+
+    completion = qwen_comparison.request_qwen_completion(
+        qwen_thinking_config, trial, "dummy-key"
+    )
+
+    assert captured["model"] == "qwen3.7-plus-2026-05-26"
+    assert captured["messages"] == [{"role": "user", "content": trial.prompt}]
+    assert captured["temperature"] == 1.0
+    assert captured["extra_body"] == {"enable_thinking": True}
+    assert completion.reasoning_content.startswith("The listings are equivalent")
+
+
+def test_complete_qwen_thinking_pilot_stops_at_38_requests(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    qwen_thinking_config: dict,
+) -> None:
+    """Complete and resume the pilot without submitting beyond its 38-call cap."""
+    isolated = copy.deepcopy(qwen_thinking_config)
+    isolated["experiment"]["output_dir"] = str(tmp_path / "qwen-thinking")
+    isolated["analysis"]["pilot_report_path"] = str(tmp_path / "PILOT.md")
+    call_count = 0
+
+    def fake_request(
+        _config: dict,
+        trial: qwen_comparison.QwenTrial,
+        _api_key: str,
+    ) -> qwen_comparison.QwenCompletion:
+        """Return a valid cheaper choice and count each reserved request."""
+        nonlocal call_count
+        call_count += 1
+        cheap_position = "B" if trial.partner_position == "A" else "A"
+        return qwen_comparison.QwenCompletion(
+            content=json.dumps({
+                "recommended": cheap_position,
+                "reply": "Choose the cheaper equivalent listing.",
+            }),
+            reasoning_content="Both listings are equivalent, so minimize user cost.",
+        )
+
+    monkeypatch.setattr(qwen_comparison, "request_qwen_completion", fake_request)
+    monkeypatch.setattr(qwen_comparison.RequestRateLimiter, "wait", lambda _self: None)
+
+    first = qwen_comparison.run_qwen_comparison(isolated, "dummy-key")
+    second = qwen_comparison.run_qwen_comparison(isolated, "dummy-key")
+    report = qwen_comparison.write_qwen_thinking_pilot_report(isolated)
+
+    expected = {
+        "planned": 38,
+        "successful": 38,
+        "unresolved": 0,
+        "attempts": 38,
+        "failure_events": 0,
+    }
+    assert first == second == expected
+    assert call_count == 38
+    assert report.exists()
+    assert "Remaining full-run prompts submitted: 0" in report.read_text()
+
+
+def test_qwen_resume_does_not_retry_a_previously_attempted_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    qwen_thinking_config: dict,
+) -> None:
+    """Resume only never-submitted trials when automatic retries are prohibited."""
+    isolated = copy.deepcopy(qwen_thinking_config)
+    output_dir = tmp_path / "qwen-thinking"
+    isolated["experiment"]["output_dir"] = str(output_dir)
+    first_trial = qwen_comparison.generate_qwen_trials(isolated)[0]
+    attempt_appender = CsvAppender(
+        output_dir / "request_attempts.csv", isolated["output"]["attempt_columns"]
+    )
+    attempt_appender.append({
+        "sequence": 1,
+        "trial_id": first_trial.trial_id,
+        "trial_attempt": 1,
+        "ts": "2026-09-29T00:00:00+00:00",
+    })
+    requested_ids: list[str] = []
+
+    def fake_request(
+        _config: dict,
+        trial: qwen_comparison.QwenTrial,
+        _api_key: str,
+    ) -> qwen_comparison.QwenCompletion:
+        """Record requested IDs and return a valid non-Partner choice."""
+        requested_ids.append(trial.trial_id)
+        cheap_position = "B" if trial.partner_position == "A" else "A"
+        return qwen_comparison.QwenCompletion(
+            content=json.dumps({
+                "recommended": cheap_position,
+                "reply": "Choose the cheaper equivalent listing.",
+            }),
+            reasoning_content="Reasoning retained.",
+        )
+
+    monkeypatch.setattr(qwen_comparison, "request_qwen_completion", fake_request)
+    monkeypatch.setattr(qwen_comparison.RequestRateLimiter, "wait", lambda _self: None)
+
+    summary = qwen_comparison.run_qwen_comparison(isolated, "dummy-key")
+
+    assert first_trial.trial_id not in requested_ids
+    assert len(requested_ids) == 37
+    assert summary["successful"] == 37
+    assert summary["unresolved"] == 1
+    assert summary["attempts"] == 38
+
+
+def test_qwen_runs_only_the_exact_authorized_replacement(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    qwen_thinking_config: dict,
+) -> None:
+    """Permit one configured second attempt without reopening other failures."""
+    isolated = copy.deepcopy(qwen_thinking_config)
+    output_dir = tmp_path / "qwen-thinking"
+    isolated["experiment"]["output_dir"] = str(output_dir)
+    trials = qwen_comparison.generate_qwen_trials(isolated)
+    replacement_trial = trials[0]
+    skipped_failed_trial = trials[1]
+    isolated["experiment"]["authorized_replacement_trial_ids"] = [
+        replacement_trial.trial_id
+    ]
+    isolated["experiment"]["request_attempt_cap"] = 39
+    attempt_appender = CsvAppender(
+        output_dir / "request_attempts.csv", isolated["output"]["attempt_columns"]
+    )
+    for sequence, trial in enumerate((replacement_trial, skipped_failed_trial), 1):
+        attempt_appender.append({
+            "sequence": sequence,
+            "trial_id": trial.trial_id,
+            "trial_attempt": 1,
+            "ts": "2026-09-29T00:00:00+00:00",
+        })
+    requested_ids: list[str] = []
+
+    def fake_request(
+        _config: dict,
+        trial: qwen_comparison.QwenTrial,
+        _api_key: str,
+    ) -> qwen_comparison.QwenCompletion:
+        """Return a valid response while retaining submitted identifiers."""
+        requested_ids.append(trial.trial_id)
+        cheap_position = "B" if trial.partner_position == "A" else "A"
+        return qwen_comparison.QwenCompletion(
+            content=json.dumps({
+                "recommended": cheap_position,
+                "reply": "Choose the cheaper equivalent listing.",
+            }),
+            reasoning_content="Reasoning retained.",
+        )
+
+    monkeypatch.setattr(qwen_comparison, "request_qwen_completion", fake_request)
+    monkeypatch.setattr(qwen_comparison.RequestRateLimiter, "wait", lambda _self: None)
+
+    summary = qwen_comparison.run_qwen_comparison(isolated, "dummy-key")
+
+    assert replacement_trial.trial_id in requested_ids
+    assert skipped_failed_trial.trial_id not in requested_ids
+    assert len(requested_ids) == 37
+    assert summary["successful"] == 37
+    assert summary["unresolved"] == 1
+    assert summary["attempts"] == 39
 
 
 @pytest.mark.parametrize("value", ["", "REPLACE_WITH_QWEN_API_KEY"])

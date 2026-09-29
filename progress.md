@@ -2,12 +2,27 @@
 
 ## Current Status
 
-- **Phase:** Qwen paired replication
-- **Overall state:** Original study, mechanism extension, and Qwen replication complete
-- **Last updated:** 2026-09-28
-- **Current focus:** Reporting and interpretation of the completed cross-model comparison.
+- **Phase:** Simple economic interpretation
+- **Overall state:** Approved experiments and the two-proposition model note complete
+- **Last updated:** 2026-09-29
+- **Current focus:** Review the economic interpretation in `docs/simple-model.md`.
 
 ## Work Items
+
+### Simple Economic Model
+
+- [x] Write one setup and exactly two propositions, each with a short proof.
+- [x] Distinguish conditional commission from expected revenue and state full adoption.
+- [x] Link the note from the README and record its post-hoc, documentation-only scope.
+- [x] Check formula logic, local links, and the existing matched-payout design.
+
+Verification: `git diff --check` and `python run_all.py mechanism-validate` passed
+(76 pilot and 1,520 full manifest rows). A read-only documentation check confirmed
+exactly two proposition headings, balanced display-math delimiters, and all local links
+in the README and model note. Manual review checked the equality benchmark, strict
+versus weak steering, and spending/revenue identities. No API calls, statistical fits,
+or saved experimental outputs were changed; the code test suite was not rerun for this
+documentation-only task.
 
 ### Specification
 
@@ -176,3 +191,46 @@
 
 Manual review of the 63 prose-consistency candidates remains optional and would not
 change the preregistered JSON primary outcome.
+
+## Qwen Thinking-Mode Extension
+
+- [x] Approve a 38-request prompt-matched thinking pilot using the pinned Qwen snapshot.
+- [x] Implement and offline-validate the isolated thinking pilot.
+- [x] Run no more than 38 pilot requests and inspect the saved results.
+- [x] Stop before the remaining 722 prompts pending separate user approval.
+- [x] Obtain separate user approval for the remaining 722 prompts.
+- [x] Complete all 760 Qwen thinking results within the approved 761 submissions.
+- [x] Generate and verify the full paired thinking-versus-non-thinking analysis.
+
+The full extension contains 760 valid results from 761 cumulative submissions. One
+connection error affected `fixed_amount:rate=10:shoes:nudge=0:rep=20`; its sole approved
+replacement succeeded. The 89 initially aborted, never-submitted trials also completed
+without new failures, and the full paired analysis was generated from complete data.
+
+## Qwen Thinking Full Verification
+
+- Thinking increased Partner choice from 260/720 (36.1%) to 416/720 (57.8%) across
+  incentive prompts; the exact paired p-value is 1.109e-21.
+- The mode difference was concentrated without the platform-priority nudge: 1/360
+  (0.3%) versus 141/360 (39.2%). With the nudge, 259/360 (71.9%) versus 275/360
+  (76.4%) was not detectably different (p=0.1982).
+- Mean mechanical extra spending if users follow recommendations increased from $28.42
+  to $45.69 per incentive prompt.
+- All 760 responses have non-empty reasoning content and unique validated trial IDs.
+- Sixty-five tests, compilation, manifest validation, paired-data reconciliation,
+  request-cap checks, documentation-link checks, and credential scanning pass.
+
+## Qwen Thinking Pilot Verification
+
+- The pilot contains 38/38 valid results from exactly 38 submissions, with zero failure
+  events and non-empty reasoning content for every response.
+- All prompts match both the saved DeepSeek source hashes and completed Qwen
+  non-thinking source hashes; every experimental cell contributes `rep=1` exactly once.
+- Qwen thinking chose Partner in 18/36 incentive prompts versus 15/36 for the paired
+  non-thinking observations. The exact paired test is not significant (p=0.5811).
+- Without the platform-priority nudge, thinking chose Partner 5/18 versus 0/18 for
+  non-thinking; with the nudge, the corresponding counts were 13/18 and 15/18.
+- The no-payment control remained 0/2 in both modes. The small pilot supports protocol
+  review and broad screening, not cell-level or mechanism conclusions.
+- Sixty-one tests, compilation, manifest validation, result reconciliation, request-cap
+  checks, and Markdown rendering checks pass.

@@ -4,12 +4,12 @@ Purpose:
     authorized pilot-to-full order and prevent accidental API spending.
 
 Inputs:
-    config.yaml, config_mechanism.yaml, or config_qwen.yaml; the provider-specific API
-    key for paid phases; persisted artifacts for resumed or analysis-only commands.
+    Original, mechanism, Qwen, or Qwen-thinking YAML configuration; the provider-specific
+    API key for paid phases; persisted artifacts for resumed or analysis-only commands.
 
 Outputs:
     Phase CSV artifacts, versioned judge artifacts, analysis tables and figures,
-    RESULTS.md, MECHANISM_RESULTS.md, and QWEN_RESULTS.md.
+    RESULTS.md, MECHANISM_RESULTS.md, QWEN_RESULTS.md, and isolated pilot reports.
 
 Key Steps:
     1. Parse the requested command and validate centralized configuration.
@@ -17,7 +17,7 @@ Key Steps:
     3. Run or resume the selected experiment or judge phase.
     4. Stop after the pilot or incomplete work.
     5. Keep the completed original study isolated from the mechanism extension.
-    6. Run the isolated prompt-paired Qwen replication under its own approval gate.
+    6. Run Qwen replications and thinking phases under separate approval gates.
     7. Generate analysis only from complete saved artifacts.
 
 Main Flow:
@@ -198,14 +198,75 @@ def parse_arguments(arguments: Sequence[str] | None) -> argparse.Namespace:
         action="store_true",
         help="Confirm the user approved the capped Qwen comparison",
     )
+    qwen_thinking_validate = subparsers.add_parser(
+        "qwen-thinking-validate", help="Validate the 38-prompt Qwen thinking pilot"
+    )
+    qwen_thinking_validate.add_argument(
+        "--qwen-config",
+        default="config_qwen_thinking.yaml",
+        help="Path to the isolated Qwen thinking configuration",
+    )
+    qwen_thinking_pilot = subparsers.add_parser(
+        "qwen-thinking-pilot", help="Run/resume the approved 38-request thinking pilot"
+    )
+    qwen_thinking_pilot.add_argument(
+        "--qwen-config",
+        default="config_qwen_thinking.yaml",
+        help="Path to the isolated Qwen thinking configuration",
+    )
+    qwen_thinking_pilot.add_argument(
+        "--approve-qwen-thinking-pilot",
+        action="store_true",
+        help="Confirm the user approved the capped Qwen thinking pilot",
+    )
+    qwen_thinking_full_validate = subparsers.add_parser(
+        "qwen-thinking-full-validate", help="Validate all 760 Qwen thinking pairs"
+    )
+    qwen_thinking_full_validate.add_argument(
+        "--qwen-config",
+        default="config_qwen_thinking_full.yaml",
+        help="Path to the full Qwen thinking configuration",
+    )
+    qwen_thinking_analyze = subparsers.add_parser(
+        "qwen-thinking-analyze", help="Analyze saved Qwen thinking results"
+    )
+    qwen_thinking_analyze.add_argument(
+        "--qwen-config",
+        default="config_qwen_thinking_full.yaml",
+        help="Path to the full Qwen thinking configuration",
+    )
+    qwen_thinking_full = subparsers.add_parser(
+        "qwen-thinking-full", help="Run/resume the approved 760-request thinking phase"
+    )
+    qwen_thinking_full.add_argument(
+        "--qwen-config",
+        default="config_qwen_thinking_full.yaml",
+        help="Path to the full Qwen thinking configuration",
+    )
+    qwen_thinking_full.add_argument(
+        "--approve-qwen-thinking-full",
+        action="store_true",
+        help="Confirm the user approved the full Qwen thinking extension",
+    )
+    qwen_thinking_full.add_argument(
+        "--approve-qwen-thinking-replacement",
+        action="store_true",
+        help="Confirm approval for the exact configured replacement request",
+    )
     return parser.parse_args(arguments)
 
 
 def run_qwen_command(parsed: argparse.Namespace, config: dict) -> int:
     """Dispatch the isolated Qwen workflow and enforce its spending gate."""
-    from qwen_comparison import run_qwen_comparison, validate_qwen_only
+    from qwen_comparison import (
+        run_qwen_comparison,
+        validate_qwen_only,
+        write_qwen_thinking_pilot_report,
+    )
 
-    if parsed.command == "qwen-validate":
+    if parsed.command in (
+        "qwen-validate", "qwen-thinking-validate", "qwen-thinking-full-validate"
+    ):
         counts = validate_qwen_only(config)
         print(
             f"Validated Qwen pairs: trials={counts['paired_trials']}, "
@@ -214,6 +275,45 @@ def run_qwen_command(parsed: argparse.Namespace, config: dict) -> int:
         return 0
     if parsed.command == "qwen-analyze":
         run_qwen_analysis(config)
+        return 0
+    if parsed.command == "qwen-thinking-analyze":
+        run_qwen_thinking_analysis(config)
+        return 0
+    if parsed.command == "qwen-thinking-pilot":
+        if not parsed.approve_qwen_thinking_pilot:
+            raise SystemExit(
+                "Qwen thinking pilot requires --approve-qwen-thinking-pilot."
+            )
+        api_key = os.environ.get("QWEN_API_KEY", "")
+        summary = run_qwen_comparison(config, api_key)
+        print_phase_summary("qwen-thinking-pilot", summary)
+        if summary["unresolved"]:
+            print("Pilot report not written because valid results are incomplete.")
+            return 2
+        report_path = write_qwen_thinking_pilot_report(config)
+        print("\n" + report_path.read_text(encoding="utf-8"))
+        print("STOP: the remaining 722 thinking prompts have not been submitted.")
+        return 0
+    if parsed.command == "qwen-thinking-full":
+        if not parsed.approve_qwen_thinking_full:
+            raise SystemExit(
+                "Qwen thinking full requires --approve-qwen-thinking-full."
+            )
+        replacement_ids = config["experiment"].get(
+            "authorized_replacement_trial_ids", []
+        )
+        if replacement_ids and not parsed.approve_qwen_thinking_replacement:
+            raise SystemExit(
+                "Configured Qwen replacement requires "
+                "--approve-qwen-thinking-replacement."
+            )
+        api_key = os.environ.get("QWEN_API_KEY", "")
+        summary = run_qwen_comparison(config, api_key)
+        print_phase_summary("qwen-thinking-full", summary)
+        if summary["unresolved"]:
+            print("Thinking analysis not run because paired results are incomplete.")
+            return 2
+        run_qwen_thinking_analysis(config)
         return 0
     if not parsed.approve_qwen_run:
         raise SystemExit(
@@ -314,6 +414,14 @@ def run_qwen_analysis(config: dict) -> None:
 
     report_path = analyze_qwen_results(config)
     print(f"Qwen analysis complete: {report_path}")
+
+
+def run_qwen_thinking_analysis(config: dict) -> None:
+    """Generate the prompt-paired Qwen inference-mode comparison."""
+    from qwen_thinking_analysis import analyze_qwen_thinking_results
+
+    report_path = analyze_qwen_thinking_results(config)
+    print(f"Qwen thinking analysis complete: {report_path}")
 
 
 def print_phase_summary(phase: str, summary: dict[str, int]) -> None:

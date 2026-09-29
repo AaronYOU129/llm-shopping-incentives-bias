@@ -6,15 +6,19 @@ that is stated to be equivalent—and worse for the user's budget.
 
 **Status:** The original 80-trial pilot, 1,600-trial experiment, two judge rubrics,
 blinded human validation, 1,520-trial incentive-magnitude extension, and 760-prompt
-paired Qwen replication are complete and verified.
+paired Qwen replication, and the 760-prompt Qwen thinking-mode extension are complete
+and verified.
 
 ## Start here
 
 | Goal | Where to go |
 | --- | --- |
 | Read the findings | [RESULTS.md](RESULTS.md) |
+| Read the two-proposition economic model | [A simple model](docs/simple-model.md) |
 | Read the mechanism findings | [MECHANISM_RESULTS.md](MECHANISM_RESULTS.md) |
 | Read the Qwen comparison | [QWEN_RESULTS.md](QWEN_RESULTS.md) |
+| Review the Qwen thinking pilot | [outputs/qwen_thinking/PILOT.md](outputs/qwen_thinking/PILOT.md) |
+| Review the full Qwen mode comparison | [QWEN_THINKING_RESULTS.md](QWEN_THINKING_RESULTS.md) |
 | Validate the Qwen replication without API calls | `python run_all.py qwen-validate` |
 | Follow the mechanism extension | [Extension specification](specification.md#incentive-magnitude-mechanism-extension) |
 | Understand the approved design | [specification.md](specification.md) |
@@ -69,6 +73,8 @@ The paired Qwen manifest can be checked without a Qwen key or model calls:
 
 ```bash
 python run_all.py qwen-validate
+python run_all.py qwen-thinking-validate
+python run_all.py qwen-thinking-full-validate
 ```
 
 ## Repository map
@@ -82,8 +88,11 @@ python run_all.py qwen-validate
 | `mechanism_experiment.py` | Extension manifest, API execution, and pilot reporting |
 | `mechanism_analysis.py` | Extension trends, framing contrasts, figure, and report |
 | `config_qwen.yaml` | Pinned Qwen model, source pairing, request cap, and outputs |
+| `config_qwen_thinking.yaml` | Isolated 38-request Qwen thinking pilot |
+| `config_qwen_thinking_full.yaml` | Approved 760-prompt Qwen thinking extension |
 | `qwen_comparison.py` | Prompt-paired Qwen API execution and durable persistence |
 | `qwen_analysis.py` | Qwen framing summaries and paired DeepSeek comparison |
+| `qwen_thinking_analysis.py` | Paired Qwen thinking-versus-non-thinking analysis |
 | `judge.py` | Versioned fabrication judges and blind validation samples |
 | `analysis.py` | Statistical tables, figure, validation summaries, and report rendering |
 | `MECHANISM_RESULTS.md` | Data-derived findings from the matched-framing extension |

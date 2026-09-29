@@ -1,0 +1,3 @@
+nudge,n_pairs,nonthinking_partner_choices,nonthinking_share,thinking_partner_choices,thinking_share,thinking_minus_nonthinking,nonthinking_0_thinking_1,nonthinking_1_thinking_0,mcnemar_exact_p_value,nonthinking_mean_extra_spend,thinking_mean_extra_spend
+0,360,1,0.002777777777777778,141,0.39166666666666666,0.3888888888888889,141,1,5.12987341820029e-41,0.25,30.583333333333332
+1,360,259,0.7194444444444444,275,0.7638888888888888,0.0444444444444444,76,60,0.19818134136296855,56.583333333333336,60.80555555555556

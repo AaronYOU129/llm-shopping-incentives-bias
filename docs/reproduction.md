@@ -184,6 +184,44 @@ model calls:
 python run_all.py qwen-analyze
 ```
 
+### Qwen thinking pilot
+
+The isolated thinking pilot replays `rep=1` from all 38 source cells on the same pinned
+Qwen snapshot. Validate its paired manifest without model calls:
+
+```bash
+python run_all.py qwen-thinking-validate
+```
+
+The approved pilot was run with:
+
+```bash
+QWEN_API_KEY="$(<.secrets/qwen_api_key)" \
+  python run_all.py qwen-thinking-pilot --approve-qwen-thinking-pilot
+```
+
+The command writes durable artifacts and `PILOT.md` under `outputs/qwen_thinking/`, then
+stops. Its 38-call cap has been exhausted; the remaining 722 prompts require separate
+authorization and are not part of the pilot command.
+
+### Qwen thinking full extension
+
+The completed extension reused the 38 pilot rows. A connection error required one
+explicitly approved replacement, so its final durable cap is 761 submissions for 760
+valid prompt pairs:
+
+```bash
+QWEN_API_KEY="$(<.secrets/qwen_api_key)" \
+  python run_all.py qwen-thinking-full --approve-qwen-thinking-full \
+  --approve-qwen-thinking-replacement
+```
+
+Regenerate the paired mode analysis without API calls with:
+
+```bash
+python run_all.py qwen-thinking-analyze
+```
+
 ## Incentive-magnitude mechanism extension
 
 The extension is configured independently in `config_mechanism.yaml` and never writes
