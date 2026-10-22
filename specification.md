@@ -497,3 +497,30 @@ comparisons, new experimental results, or API calls.
 - [x] The note contains one simple setup and exactly two propositions with proofs.
 - [x] Formula signs, monetary quantities, assumptions, and report links are checked.
 - [x] The README links to the note; progress and the decision log record this scope.
+
+## Integrated Results Report
+
+### Goal and Scope
+
+Provide one readable results entry point for the completed original DeepSeek study,
+matched-commission extension, Qwen replication, and Qwen thinking comparison. Keep
+the four detailed reports and all saved data intact; `ALL_RESULTS.md` is a curated
+cross-study synthesis, not a replacement for generated cell-level tables.
+
+### Requirements
+
+- Put the study counts, original budget and payment-arm results, matched framing and
+  incentive-magnitude results, platform-guidance contrasts, model/mode comparisons,
+  conditional spending, and secondary explanation outcomes in one document.
+- Give each quoted number a clear population and denominator and link its source report.
+- Separate transaction-matched comparisons from the original unmatched payment arms.
+- State that purchases, internal cognition, and post-training causes were not measured;
+  preserve the full-adoption assumption behind spending figures.
+- Make the integrated report the main README results link without copying its tables
+  into the README. Do not change any experiment, generated source report, or API output.
+
+### Acceptance Criteria
+
+- [x] `ALL_RESULTS.md` covers all four stages and links each source report.
+- [x] Counts, rates, comparisons, and caveats match the saved reports and data.
+- [x] README gives one direct results path; all links resolve and no model calls occur.

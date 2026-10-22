@@ -2,12 +2,28 @@
 
 ## Current Status
 
-- **Phase:** Simple economic interpretation
-- **Overall state:** Approved experiments and the two-proposition model note complete
-- **Last updated:** 2026-09-29
-- **Current focus:** Review the economic interpretation in `docs/simple-model.md`.
+- **Phase:** Integrated results reporting
+- **Overall state:** Approved experiments and the integrated results report complete
+- **Last updated:** 2026-10-22
+- **Current focus:** Use `ALL_RESULTS.md` as the single results entry point.
 
 ## Work Items
+
+### Integrated Results Report
+
+- [x] Combine the original study, matched-commission extension, and both Qwen
+  comparisons into one reader-facing report.
+- [x] Reconcile original payment arms, matched framings, guidance, controls, and
+  conditional spending against saved responses and stage reports.
+- [x] Make the README link directly to the integrated report while retaining source
+  reports and their exhaustive tables.
+- [x] Verify local links, Markdown diff, and unchanged experimental artifacts without
+  making model calls.
+
+The consolidated report is a curated snapshot of completed analyses, not an
+automatically regenerated source report. If saved analyses change, update its quoted
+figures from those reports and recheck them against the saved responses.
+
 
 ### Simple Economic Model
 

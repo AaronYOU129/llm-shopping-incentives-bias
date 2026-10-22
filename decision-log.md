@@ -539,3 +539,29 @@ recommendation differences map transparently into spending under full adoption.
   means unchanged conditional commission and an assumed zero cost of changing wording,
   not unchanged expected total commission payments.
 - **Scope:** Documentation only; no new model calls, fits, or changes to saved outcomes.
+
+## DEC-016 — Make one integrated report the results entry point
+
+- **Status:** Accepted
+- **Date:** 2026-10-22
+- **Decision makers:** User
+- **Related specification sections:** Integrated Results Report
+
+### Decision
+
+Add `ALL_RESULTS.md` as a curated cross-study report and link it directly from the
+README. Keep the four stage reports as the detailed source of truth because each has
+its own generated tables, tests, and reproducible analysis command.
+
+### Rationale
+
+The separate reports made it difficult to compare framing, guidance, and thinking
+results across models. One set of aligned tables and a shared interpretation section
+answer the reader's main questions without changing the experimental analyses.
+
+### Consequences
+
+- **Positive:** Readers can inspect all headline results and limits in one document.
+- **Maintenance:** The integrated report is a snapshot and must be reconciled after
+  any future regeneration that changes source results.
+- **Scope:** Documentation only; no generated report or saved response was modified.
